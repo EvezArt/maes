@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "better-sqlite3": "^9.4.3",
-    "fastify": "^4.26.2"
+    "fastify": "^5.8.4"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.8",
