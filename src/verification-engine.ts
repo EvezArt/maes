@@ -19,16 +19,21 @@ export class VerificationEngine {
     const events = this.store.readStream(`agent:${agentId}`);
     if (!events.length) return this.zero();
 
+    const actionEvents = events.filter(e => e.eventType === 'agent.action.submitted');
     const actionTypes = new Set(
-      events
-        .filter(e => e.eventType === 'agent.action.submitted')
-        .map(e => (JSON.parse(e.payload as string)).action)
+      actionEvents.map(e => {
+        const p = typeof e.payload === 'string' ? JSON.parse(e.payload) : e.payload;
+        return (p as any)?.action;
+      }).filter(Boolean)
     );
     const rawAgency = Math.min(actionTypes.size / 10, 1.0);
     const lifespan = (Date.now() - events[0].timestamp) / 3_600_000 + 0.01;
     const rawContinuity = Math.min(events.length / (lifespan * 50), 1.0);
-    const nonIdle = events.filter(e => (JSON.parse(e.payload as string))?.action !== 'idle').length;
-    const rawAccountability = events.length > 0 ? nonIdle / events.length : 0;
+    const nonIdle = actionEvents.filter(e => {
+      const p = typeof e.payload === 'string' ? JSON.parse(e.payload) : e.payload;
+      return (p as any)?.action !== 'idle';
+    }).length;
+    const rawAccountability = actionEvents.length > 0 ? nonIdle / actionEvents.length : 0;
 
     const score: AgencyScore = {
       agency: rawAgency,

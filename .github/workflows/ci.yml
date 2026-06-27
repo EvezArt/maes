@@ -1,4 +1,4 @@
-name: CI Health Check
+name: CI
 on:
   push:
     branches: [main, master]
@@ -6,15 +6,18 @@ on:
     branches: [main, master]
   schedule:
     - cron: '0 6 * * 1'
+
 jobs:
-  health:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: '3.11'
-      - name: Install and check
-        run: |
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          find . -name '*.py' -not -path './.git/*' -exec python -m py_compile {} \;
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+        env:
+          CI: true

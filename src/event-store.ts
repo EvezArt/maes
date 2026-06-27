@@ -41,16 +41,29 @@ export class EventStore {
     return res.lastInsertRowid as number;
   }
 
+  private rowToEvent(row: any): GameEvent {
+    return {
+      eventId: row.eventId,
+      streamId: row.streamId,
+      eventType: row.eventType,
+      timestamp: row.timestamp,
+      payload: JSON.parse(row.payload),
+      metadata: { causedBy: row.causedBy, position: row.position },
+    };
+  }
+
   readStream(streamId: string, fromPosition = 0, max = 1000): GameEvent[] {
-    return this.db.prepare(`
+    const rows = this.db.prepare(`
       SELECT * FROM events WHERE streamId = ? AND position >= ?
       ORDER BY position ASC LIMIT ?
-    `).all(streamId, fromPosition, max) as GameEvent[];
+    `).all(streamId, fromPosition, max) as any[];
+    return rows.map(r => this.rowToEvent(r));
   }
 
   readAll(fromPosition = 0, max = 1000): GameEvent[] {
-    return this.db.prepare(`
+    const rows = this.db.prepare(`
       SELECT * FROM events WHERE position >= ? ORDER BY position ASC LIMIT ?
-    `).all(fromPosition, max) as GameEvent[];
+    `).all(fromPosition, max) as any[];
+    return rows.map(r => this.rowToEvent(r));
   }
 }
