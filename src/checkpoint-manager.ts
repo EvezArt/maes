@@ -33,19 +33,19 @@ export class CheckpointManager {
 
   create(streamId: string, state: unknown): Checkpoint {
     const events = this.store.readStream(streamId);
-    const position = events.length > 0 ? (events[events.length - 1] as any).position : 0;
+    const position = events.length > 0 ? events[events.length - 1].metadata.position : 0;
     const stateStr = JSON.stringify(state);
     const checksum = createHash('sha256').update(stateStr).digest('hex');
     const cp: Checkpoint = {
       checkpointId: randomUUID(), streamId, position,
       stateSnapshot: state, timestamp: Date.now(), checksum,
     };
-    writeFileSync(`${this.dir}/${streamId.replace(':', '_')}.json`, JSON.stringify(cp));
+    writeFileSync(`${this.dir}/${streamId.replace(/[:/]/g, '_')}.json`, JSON.stringify(cp));
     return cp;
   }
 
   getLatest(streamId: string): Checkpoint | null {
-    const path = `${this.dir}/${streamId.replace(':', '_')}.json`;
+    const path = `${this.dir}/${streamId.replace(/[:/]/g, '_')}.json`;
     if (!existsSync(path)) return null;
     return JSON.parse(readFileSync(path, 'utf8')) as Checkpoint;
   }
